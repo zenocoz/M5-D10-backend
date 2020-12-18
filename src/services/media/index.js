@@ -4,12 +4,16 @@ const { join } = require("path")
 const uniqid = require("uniqid")
 const { readDB, writeDB } = require("../../lib/utilities")
 const { check, validationResult, matchedData } = require("express-validator")
+const { writeFile, createReadStream } = require("fs-extra")
+const multer = require("multer")
 
 //Middleware Instances
 const router = express.Router()
+const upload = multer({})
 
 //Paths
 const mediaFilesPath = join(__dirname, "media.json")
+const mediaFolderPath = join(__dirname, "../../../public/img/media")
 
 router.get("/", async (req, res, next) => {
   try {
@@ -272,6 +276,22 @@ router.delete("/:id/reviews/:reviewId", async (req, res, next) => {
       next(error)
     }
   } catch (error) {
+    next(error)
+  }
+})
+router.post("/:id/upload", upload.single("medium"), async (req, res, next) => {
+  try {
+    const mediumId = req.params.id
+    await writeFile(join(mediaFolderPath, `${mediumId}.jpg`), req.file.buffer)
+    const mediaDB = await readDB(mediaFilesPath)
+    let medium = await mediaDB.find((medium) => medium.imdbID === mediumId)
+
+    medium.imageUrl = `http://localhost:${process.env.PORT}/img/media/${medium.imdbID}.jpg`
+
+    await writeDB(mediaFilesPath, mediaDB)
+    res.send("ok")
+  } catch (error) {
+    console.log(error)
     next(error)
   }
 })

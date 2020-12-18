@@ -79,17 +79,24 @@ router.put(
         err.httpStatusCode = 400
         next(err)
       } else {
-        const mediaDB = await readDB(mediaFilesPath)
-        const newMediaDB = mediaDB.filter(
-          (medium) => medium.imdbID !== req.params.id
-        )
+        let mediaDB = await readDB(mediaFilesPath)
 
-        const modifiedMedium = { ...req.body, modifiedAt: new Date() }
-        newMediaDB.push(modifiedMedium)
-        await writeDB(mediaFilesPath, newMediaDB)
-        res
-          .status(203)
-          .send({ "modified media with imdbId:": modifiedMedium.imdbID })
+        mediaDB = mediaDB.map((medium) =>
+          medium.imdbID == req.params.id
+            ? { ...req.body, modifiedAt: new Date() }
+            : medium
+        )
+        // mediaDB = mediaDB.filter((media) => {
+        //   console.log(media.imdbID, req.params.id)
+        //   console.log(media)
+        //   return media.imdbID !== req.params.id
+        // })
+        //console.log(mediaDB)
+
+        // const modifiedMedium = { ...req.body, modifiedAt: new Date() }
+        // newMediaDB.push(modifiedMedium)
+        await writeDB(mediaFilesPath, mediaDB)
+        res.status(203).send({ "modified media with imdbId:": req.params.id })
       }
     } catch (errors) {
       console.log(errors)
@@ -97,7 +104,29 @@ router.put(
     }
   }
 )
-router.delete("/", async (req, res, next) => {})
+router.delete("/:id", async (req, res, next) => {
+  try {
+    const mediaDB = await readDB(mediaFilesPath)
+    const checkIdIsCorrect = mediaDB.find(
+      (medium) => medium.imdbID === req.params.id
+    )
+    if (!checkIdIsCorrect) {
+      const err = new Error()
+      err.message = "Medium not found"
+      err.httpStatusCode = 404
+      next(err)
+    } else {
+      const newMediaDB = mediaDB.filter(
+        (medium) => medium.imdbID !== req.params.id
+      )
+      await writeDB(mediaFilesPath, newMediaDB)
+      res.status(204).send(`mediuma with imdbID ${req.params.id} deleted`)
+    }
+  } catch (error) {
+    console.log(error)
+    next(error)
+  }
+})
 
 //reviews
 

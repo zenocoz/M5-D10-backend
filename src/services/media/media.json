@@ -1,1 +1,19 @@
-[{"Title":"The Lord of the Rings: The Fellowship of the Ring","Year":"2001","imdbID":"tt0120737","Type":"movie","Poster":"https://m.media-amazon.com/images/M/MV5BMTM5MzcwOTg4MF5BMl5BanBnXkFtZTgwOTQwMzQxMDE@._V1_SX300.jpg","createdAt":"2020-12-18T10:30:40.006Z"},{"Title":"Dune","Year":"1984","imdbID":"tt0087182","Type":"movie","Poster":"https://www.imdb.com/title/tt0087182/mediaviewer/rm423377408/","createdAt":"2020-12-18T10:52:14.232Z"},{"Title":"The Lord of the Rings: The Fellowship of the Ring","Year":"2001","imdbID":"tt0120737","Type":"movie","Poster":"https://www.imdb.com/title/tt0120737/mediaviewer/rm3592958976/","createdAt":"2020-12-18T10:30:40.006Z","modifiedAt":"2020-12-18T11:33:24.478Z"}]
+[
+    {
+        "Title": "The Lord of the Rings: The Fellowship of the Ring",
+        "Year": "2001",
+        "imdbID": "tt0120737",
+        "Type": "movie",
+        "Poster": "https://www.imdb.com/title/tt0120737/mediaviewer/rm3592958976/",
+        "createdAt": "2020-12-18T10:30:40.006Z",
+        "modifiedAt": "2020-12-18T12:39:47.941Z"
+    },
+    {
+        "Title": "Dune",
+        "Year": "1984",
+        "imdbID": "tt0087182",
+        "Type": "movie",
+        "Poster": "https://www.imdb.com/title/tt0087182/mediaviewer/rm423377408/",
+        "createdAt": "2020-12-18T10:52:14.232Z"
+    }
+]

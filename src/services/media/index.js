@@ -172,6 +172,34 @@ router.post(
   }
 )
 
+//Get all the reviews for the medium
+router.get("/:id/reviews", async (req, res, next) => {
+  try {
+    const mediaDB = await readDB(mediaFilesPath)
+    const mediumIndex = mediaDB.findIndex(
+      (medium) => medium.imdbID === req.params.id
+    )
+    if (mediumIndex !== -1) {
+      if (
+        !mediaDB[mediumIndex].hasOwnProperty("reviews") ||
+        mediaDB[mediumIndex].reviews.length === 0
+      ) {
+        const err = new Error("there are no reviews for this medium")
+        err.httpStatusCode = 404
+        next(err)
+      } else {
+        res.status(201).send(mediaDB[mediumIndex].reviews)
+      }
+    } else {
+      const err = new Error("medium imdbId not found")
+      err.httpStatusCode = 404
+      next(err)
+    }
+  } catch (error) {
+    next(error)
+  }
+})
+
 //modify review
 router.put(
   "/:id/reviews/:reviewId",
@@ -204,7 +232,7 @@ router.put(
           await writeDB(mediaFilesPath, mediaDB)
           res
             .status(203)
-            .send({ "modified comment with following data": validateData })
+            .send({ "modified review with the following data": validateData })
         }
       } else {
         const err = new Error("medium not found")
@@ -218,112 +246,34 @@ router.put(
   }
 )
 
-//Get all the reviewsfor the medium
-router.get("/:id/reviews", async (req, res, next) => {
+// //delete single review
+router.delete("/:id/reviews/:reviewId", async (req, res, next) => {
   try {
     const mediaDB = await readDB(mediaFilesPath)
-    const mediumIndex = mediaDB.findIndex(
-      (medium) => medium.imdbID === req.params.id
-    )
-    if (mediumIndex !== -1) {
-      if (
-        !mediaDB[mediumIndex].hasOwnProperty("reviews") ||
-        mediaDB[mediumIndex].reviews.length === 0
-      ) {
-        const err = new Error("there are no reviews for this medium")
-        err.httpStatusCode = 404
-        next(err)
+    const medium = mediaDB.find((medium) => medium.imdbID === req.params.id)
+    if (medium && medium.hasOwnProperty("reviews")) {
+      const foundReview = medium.reviews.find(
+        (review) => review._id === req.params.reviewId
+      )
+      if (foundReview) {
+        medium.reviews = medium.reviews.filter(
+          (review) => review._id !== req.params.reviewId
+        )
+        await writeDB(mediaFilesPath, mediaDB)
+        res.status(204) //TODO check why not get a response
       } else {
-        res.status(201).send(mediaDB[mediumIndex].reviews)
+        const error = new Error("review not found")
+        error.httpStatusCode = 404
+        next(error)
       }
     } else {
-      const err = new Error("medium imdbId not found")
-      err.httpStatusCode = 404
-      next(err)
+      const error = new Error("medium or medium property not found")
+      error.httpStatusCode = 404
+      next(error)
     }
   } catch (error) {
     next(error)
   }
 })
-
-// //delete comment from single book
-// booksRouter.delete("/:bookId/comments/:commentId", async (req, res, next) => {
-//   try {
-//     const books = await getBooks()
-//     const singleBook = books.find((book) => book.asin === req.params.bookId)
-//     if (!singleBook) {
-//       const err = new Error("book not found")
-//       err.httpStatusCode = 404
-//       next(err)
-//     } else {
-//       if (
-//         !singleBook.hasOwnProperty("comments") ||
-//         singleBook.comments.length === 0
-//       ) {
-//         const err = new Error()
-//         err.message = "There are no comments for this book"
-//         err.httpStatusCode = 404
-//         next(err)
-//       } else {
-//         const filteredComments = singleBook.comments.filter(
-//           (comment) => comment.commentId !== req.params.commentId
-//         )
-//         singleBook.comments = filteredComments
-//         await writeBooks(books)
-//         res.status(204).send()
-//       }
-//     }
-//   } catch (error) {
-//     next(error)
-//   }
-// })
-
-// //delete single comment from /comments
-// booksRouter.delete("/comments/:commentId", async (req, res, next) => {
-//   try {
-//     const books = await getBooks()
-//     const booksWithComments = books.filter((book) =>
-//       book.hasOwnProperty("comments")
-//     )
-
-//     if (booksWithComments) {
-//       // const allComments = [].concat(
-//       //   ...booksWithComments.map(({ comments }) => comments)
-//       // )
-//       let alteredComment = {}
-//       let alteredComments = []
-//       for (let i = 0; i < booksWithComments.length; i++) {
-//         for (let j = 0; j < booksWithComments[i].comments.length; j++) {
-//           alteredComment = {
-//             ...booksWithComments[i].comments[j],
-//             bookAsin: booksWithComments[i].asin,
-//           }
-//           alteredComments.push(alteredComment)
-//         }
-//       }
-//       let commentTodelete = alteredComments.find(
-//         (comment) => comment.commentId === req.params.commentId
-//       )
-//       // console.log(commentTodelete.commentId)
-//       // console.log(commentTodelete.bookAsin)
-
-//       const foundBook = books.find(
-//         (book) => book.asin === commentTodelete.bookAsin
-//       )
-//       const filteredComments = foundBook.comments.filter(
-//         (comment) => comment.commentId !== commentTodelete.commentId
-//       )
-//       foundBook.comments = filteredComments
-
-//       await writeBooks(books)
-//       res.status(204).send()
-//     }
-//   } catch (error) {
-//     next(error)
-//   }
-// })
-
-// //media image
-// router.post("/:id/upload", async (req, res, next) => {})
 
 module.exports = router

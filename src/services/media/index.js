@@ -6,6 +6,9 @@ const { readDB, writeDB } = require("../../lib/utilities")
 const { check, validationResult, matchedData } = require("express-validator")
 const { writeFile, createReadStream } = require("fs-extra")
 const multer = require("multer")
+const axios = require("axios")
+const { pipeline } = require("stream")
+const PdfPrinter = require("pdfmake")
 
 //Middleware Instances
 const router = express.Router()
@@ -24,6 +27,51 @@ router.get("/", async (req, res, next) => {
     next(error)
   }
 })
+
+router.get("/catalogue", async (req, res, next) => {
+  try {
+    const mediaDB = await readDB(mediaFilesPath)
+    console.log(req.query.title)
+
+    if (req.query && req.query.title) {
+      const filteredMedia = mediaDB.filter((medium) =>
+        medium.Title.includes(`${req.query.title}`)
+      )
+
+      const pdfPath = join("public", fileName)
+      pdfDoc.pipe(fs.createWriteStream(pdfPath))
+      pdfDoc.end()
+
+      res.send(filteredMedia)
+    }
+  } catch (error) {}
+})
+
+router.get("/:id", async (req, res, next) => {
+  try {
+    const mediaDB = await readDB(mediaFilesPath)
+    const mediumIndex = mediaDB.findIndex(
+      (medium) => medium.imdbID === req.params.id
+    )
+
+    if (mediumIndex !== -1) {
+      const response = await axios({
+        method: "get",
+        url: `http://www.omdbapi.com/?i=${req.params.id}&apikey=${process.env.OMDB_API_KEY}`,
+      })
+      const info = response.data
+      console.log(info)
+      res.send(info)
+    } else {
+      const err = new Error("index not found")
+      err.httpStatusCode = 404
+      next(err)
+    }
+  } catch (error) {
+    console.log(error)
+  }
+})
+
 router.post(
   "/",
   [

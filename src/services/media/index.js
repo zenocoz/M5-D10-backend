@@ -11,17 +11,15 @@ const router = express.Router()
 //Paths
 const mediaFilesPath = join(__dirname, "media.json")
 
-router.get(
-  "/",
-
-  async (req, res, next) => {
-    try {
-      console.log("reached")
-    } catch (error) {
-      next(error)
-    }
+router.get("/", async (req, res, next) => {
+  try {
+    const mediaDB = await readDB(mediaFilesPath)
+    res.status(200).send(mediaDB)
+  } catch (error) {
+    console.log(error)
+    next(error)
   }
-)
+})
 router.post(
   "/",
   [
@@ -43,13 +41,13 @@ router.post(
         err.httpStatusCode = 400
         next(err)
       } else {
-        const mediaArray = await readDB(mediaFilesPath)
+        const mediaDB = await readDB(mediaFilesPath)
         const newMedia = {
           ...req.body,
           createdAt: new Date(),
         }
-        mediaArray.push(newMedia)
-        await writeDB(mediaFilesPath, mediaArray)
+        mediaDB.push(newMedia)
+        await writeDB(mediaFilesPath, mediaDB)
         res
           .status(201)
           .send({ "created new entry for imdbID": newMedia.imdbID })
@@ -60,7 +58,45 @@ router.post(
     }
   }
 )
-router.put("/", async (req, res, next) => {})
+router.put(
+  "/:id",
+  [
+    check("Title")
+      .exists()
+      .withMessage("You need a title for your movie")
+      .isLength({ min: 1 })
+      .withMessage("Could be a one char movie like P"),
+    check("Year").exists().withMessage("year of production not found"),
+    check("imdbID").exists().withMessage("imdbID not found"),
+    check("Type").exists().withMessage("Media type not found"),
+  ],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        const err = new Error()
+        err.message = errors
+        err.httpStatusCode = 400
+        next(err)
+      } else {
+        const mediaDB = await readDB(mediaFilesPath)
+        const newMediaDB = mediaDB.filter(
+          (medium) => medium.imdbID !== req.params.id
+        )
+
+        const modifiedMedium = { ...req.body, modifiedAt: new Date() }
+        newMediaDB.push(modifiedMedium)
+        await writeDB(mediaFilesPath, newMediaDB)
+        res
+          .status(203)
+          .send({ "modified media with imdbId:": modifiedMedium.imdbID })
+      }
+    } catch (errors) {
+      console.log(errors)
+      next(errors)
+    }
+  }
+)
 router.delete("/", async (req, res, next) => {})
 
 //reviews

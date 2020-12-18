@@ -120,7 +120,7 @@ router.delete("/:id", async (req, res, next) => {
         (medium) => medium.imdbID !== req.params.id
       )
       await writeDB(mediaFilesPath, newMediaDB)
-      res.status(204).send(`mediuma with imdbID ${req.params.id} deleted`)
+      res.status(204).send(`medium with imdbID ${req.params.id} deleted`)
     }
   } catch (error) {
     console.log(error)

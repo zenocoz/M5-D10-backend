@@ -6,7 +6,7 @@
         "Type": "movie",
         "Poster": "https://www.imdb.com/title/tt0087182/mediaviewer/rm423377408/",
         "createdAt": "2020-12-18T10:52:14.232Z",
-        "imageUrl": "http://localhost:3001/img/media/tt0087182.jpg"
+        "imgUrl": "https://res.cloudinary.com/drbq4el2x/image/upload/v1608377485/striveTest/rufdoqn4j2q7f6dlz0mn.jpg"
     },
     {
         "Title": "Lords of Dogtown",

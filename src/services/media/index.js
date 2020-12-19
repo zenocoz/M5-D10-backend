@@ -9,14 +9,24 @@ const multer = require("multer")
 const axios = require("axios")
 const { pipeline } = require("stream")
 const PdfPrinter = require("pdfmake")
+const { CloudinaryStorage } = require("multer-storage-cloudinary")
 
 //Middleware Instances
 const router = express.Router()
 const upload = multer({})
+const cloudinary = require("../../cloudinary")
 
 //Paths
 const mediaFilesPath = join(__dirname, "media.json")
 const mediaFolderPath = join(__dirname, "../../../public/img/media")
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "striveTest",
+  },
+})
+const cloudinaryMulter = multer({ storage: storage })
 
 router.get("/", async (req, res, next) => {
   try {
@@ -38,11 +48,18 @@ router.get("/catalogue", async (req, res, next) => {
         medium.Title.includes(`${req.query.title}`)
       )
 
-      const pdfPath = join("public", fileName)
-      pdfDoc.pipe(fs.createWriteStream(pdfPath))
-      pdfDoc.end()
+      let docDefinition = {
+        content: "fdsafas",
+      }
 
-      res.send(filteredMedia)
+      const pdfDoc = new PdfPrinter()
+
+      const docAsStream = pdfDoc.createPdfKitDocument(docDefinition)
+
+      res.setHeader("Content-Type", `application/pdf`)
+      console.log(docAsStream)
+      docAsStream.pipe(res)
+      docAsStream.end()
     }
   } catch (error) {}
 })
@@ -138,15 +155,6 @@ router.put(
             ? { ...req.body, modifiedAt: new Date() }
             : medium
         )
-        // mediaDB = mediaDB.filter((media) => {
-        //   console.log(media.imdbID, req.params.id)
-        //   console.log(media)
-        //   return media.imdbID !== req.params.id
-        // })
-        //console.log(mediaDB)
-
-        // const modifiedMedium = { ...req.body, modifiedAt: new Date() }
-        // newMediaDB.push(modifiedMedium)
         await writeDB(mediaFilesPath, mediaDB)
         res.status(203).send({ "modified media with imdbId:": req.params.id })
       }
@@ -181,6 +189,7 @@ router.delete("/:id", async (req, res, next) => {
 })
 
 //reviews
+
 //Add a review
 router.post(
   "/:id/reviews",
@@ -298,7 +307,7 @@ router.put(
   }
 )
 
-// //delete single review
+//delete single review
 router.delete("/:id/reviews/:reviewId", async (req, res, next) => {
   try {
     const mediaDB = await readDB(mediaFilesPath)
@@ -327,21 +336,40 @@ router.delete("/:id/reviews/:reviewId", async (req, res, next) => {
     next(error)
   }
 })
-router.post("/:id/upload", upload.single("medium"), async (req, res, next) => {
-  try {
-    const mediumId = req.params.id
-    await writeFile(join(mediaFolderPath, `${mediumId}.jpg`), req.file.buffer)
-    const mediaDB = await readDB(mediaFilesPath)
-    let medium = await mediaDB.find((medium) => medium.imdbID === mediumId)
+// router.post("/:id/upload", upload.single("medium"), async (req, res, next) => {
+//   try {
+//     const mediumId = req.params.id
+//     await writeFile(join(mediaFolderPath, `${mediumId}.jpg`), req.file.buffer)
+//     const mediaDB = await readDB(mediaFilesPath)
+//     let medium = await mediaDB.find((medium) => medium.imdbID === mediumId)
 
-    medium.imageUrl = `http://localhost:${process.env.PORT}/img/media/${medium.imdbID}.jpg`
+//     medium.imageUrl = `http://localhost:${process.env.PORT}/img/media/${medium.imdbID}.jpg`
 
-    await writeDB(mediaFilesPath, mediaDB)
-    res.send("ok")
-  } catch (error) {
-    console.log(error)
-    next(error)
+//     await writeDB(mediaFilesPath, mediaDB)
+//     res.send("ok")
+//   } catch (error) {
+//     console.log(error)
+//     next(error)
+//   }
+// })
+
+router.post(
+  "/:id/upload",
+  cloudinaryMulter.single("image"),
+  async (req, res, next) => {
+    try {
+      const mediaDB = await readDB(mediaFilesPath)
+      let medium = mediaDB.find((medium) => medium.imdbID === req.params.id)
+      console.log(medium)
+      medium.imgUrl = req.file.path
+
+      await writeDB(mediaFilesPath, mediaDB)
+      res.json(mediaDB)
+    } catch (error) {
+      console.log(error)
+      next(error)
+    }
   }
-})
+)
 
 module.exports = router
